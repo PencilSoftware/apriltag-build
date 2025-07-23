@@ -48,7 +48,7 @@ jobs:
         name: linux-so
         path: build/*.so*
 
-          build-android:
+  build-android:
     runs-on: ubuntu-latest
     steps:
     # Android NDK构建步骤...
