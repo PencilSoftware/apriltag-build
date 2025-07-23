@@ -21,7 +21,7 @@ jobs:
       run: dir build\Release\
     
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4  # 改为v4
       with:
         name: windows-dll
         path: |
@@ -43,7 +43,7 @@ jobs:
       run: ls -la build/
     
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4  # 改为v4
       with:
         name: linux-so
         path: build/*.so*
