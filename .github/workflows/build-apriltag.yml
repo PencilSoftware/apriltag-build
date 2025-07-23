@@ -21,7 +21,7 @@ jobs:
       run: dir build\Release\
     
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4  # 改为v4
+      uses: actions/upload-artifact@v4
       with:
         name: windows-dll
         path: |
@@ -43,7 +43,7 @@ jobs:
       run: ls -la build/
     
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4  # 改为v4
+      uses: actions/upload-artifact@v4
       with:
         name: linux-so
         path: build/*.so*
@@ -51,9 +51,60 @@ jobs:
   build-android:
     runs-on: ubuntu-latest
     steps:
-    # Android NDK构建步骤...
+    - uses: actions/checkout@v3
+    
+    - name: Setup Android NDK
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r25c
+        add-to-path: true
+    
+    - name: Build for Android arm64-v8a
+      run: |
+        mkdir -p build-android
+        cd build-android
+        cmake .. -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+                 -DANDROID_ABI=arm64-v8a \
+                 -DANDROID_PLATFORM=android-21 \
+                 -DCMAKE_BUILD_TYPE=Release \
+                 -DBUILD_SHARED_LIBS=ON
+        cmake --build . --config Release
+    
+    - name: List output files
+      run: ls -la build-android/
+    
+    - name: Upload Android artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-so
+        path: build-android/*.so
 
   build-ios:
-    runs-on: macos-latest  
+    runs-on: macos-latest
     steps:
-    # iOS构建步骤...
+    - uses: actions/checkout@v3
+    
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+    
+    - name: Build for iOS
+      run: |
+        mkdir -p build-ios
+        cd build-ios
+        cmake .. -DCMAKE_SYSTEM_NAME=iOS \
+                 -DCMAKE_OSX_ARCHITECTURES=arm64 \
+                 -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 \
+                 -DCMAKE_BUILD_TYPE=Release \
+                 -DBUILD_SHARED_LIBS=OFF
+        cmake --build . --config Release
+    
+    - name: List output files
+      run: ls -la build-ios/
+    
+    - name: Upload iOS artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-a
+        path: build-ios/*.a
