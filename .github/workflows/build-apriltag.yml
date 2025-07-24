@@ -1,25 +1,79 @@
 name: Build AprilTag
 
 on:
+  workflow_dispatch:  # 只允许手动触发，避免自动触发
   push:
     branches: [ master ]
-  workflow_dispatch:
+    paths:  # 只在源代码改变时触发
+      - '**.c'
+      - '**.h'
+      - '**.cpp'
+      - 'CMakeLists.txt'
+      - '.github/workflows/build-apriltag.yml'
 
 jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-    # Windows步骤保持不变...
+    - uses: actions/checkout@v3
+    
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+    
+    - name: Build
+      run: cmake --build build --config Release
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4  # 使用v4
+      with:
+        name: windows-dll
+        path: |
+          build/Release/*.dll
+          build/*.dll
 
   build-linux:
     runs-on: ubuntu-latest
     steps:
-    # Linux步骤保持不变...
+    - uses: actions/checkout@v3
+    
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON
+    
+    - name: Build
+      run: cmake --build build --config Release
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4  # 使用v4
+      with:
+        name: linux-so
+        path: build/*.so*
 
   build-android:
     runs-on: ubuntu-latest
     steps:
-    # Android步骤保持不变...
+    - uses: actions/checkout@v3
+    
+    - name: Setup Android NDK
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r25c
+    
+    - name: Build for Android
+      run: |
+        mkdir -p build-android
+        cd build-android
+        cmake .. -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+                 -DANDROID_ABI=arm64-v8a \
+                 -DANDROID_PLATFORM=android-21 \
+                 -DCMAKE_BUILD_TYPE=Release \
+                 -DBUILD_SHARED_LIBS=ON
+        cmake --build .
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4  # 使用v4
+      with:
+        name: android-so
+        path: build-android/*.so
 
   build-ios:
     runs-on: macos-latest
@@ -33,13 +87,10 @@ jobs:
         cmake .. -DCMAKE_BUILD_TYPE=Release \
                  -DBUILD_SHARED_LIBS=OFF \
                  -DBUILD_EXAMPLES=OFF
-        cmake --build . --config Release
+        cmake --build .
     
-    - name: List output files
-      run: ls -la build-ios/
-    
-    - name: Upload iOS artifacts
-      uses: actions/upload-artifact@v4
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4  # 使用v4
       with:
         name: ios-a
         path: build-ios/*.a
